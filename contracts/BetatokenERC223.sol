@@ -549,7 +549,7 @@ contract BetaToken is MintableToken, BurnableToken {
     }
 
     function transfer(address _to, uint _value, bytes _data) onlyIfCanMove public returns (bool) {
-        return super.transfer(_to, _value);
+        return super.transfer(_to, _value, _data);
     }
 
 

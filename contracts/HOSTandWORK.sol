@@ -19,27 +19,40 @@ If sender == tx.origin, it is safe to trust it regardless of the token.
 */
 
 contract ERC223Receiver {
-  function tokenFallback(address _sender, address _origin, uint _value, bytes _data) returns (bool ok);
+  //function tokenFallback(address _sender, address _origin, uint _value, bytes _data) returns (bool ok);
+  // function totalSupply() public view returns (uint256);
 }
 
 /* ERC223 additions to ERC20 */
-contract Standard223Receiver is ERC223Receiver {
-  Tkn tkn;
+contract Standard223Receiver  is ERC223Receiver {
+  //
+  
+    struct TKN {
+        address sender;
+        uint value;
+        bytes data;
+        bytes4 sig;
+    }
+    
+    
+    function tokenFallback(address _from, uint _value, bytes _data) public pure {
 
-  struct Tkn {
-    address addr;
-    address sender;
-    address origin;
-    uint256 value;
-    bytes data;
-    bytes4 sig;
-  }
-
-  function tokenFallback(address _sender, address _origin, uint _value, bytes _data)  returns (bool ok) {
-    if (!supportsToken(msg.sender)) return false;
-
-    // Problem: This will do a sstore which is expensive gas wise. Find a way to keep it in memory.
-    tkn = Tkn(msg.sender, _sender, _origin, _value, _data, getSig(_data));
+         bool __isTokenFallback;
+      TKN memory tkn;
+      tkn.sender = _from;
+      tkn.value = _value;
+      tkn.data = _data;
+      uint32 u = uint32(_data[3]) + (uint32(_data[2]) << 8) + (uint32(_data[1]) << 16) + (uint32(_data[0]) << 24);
+      tkn.sig = bytes4(u);
+      
+      /* tkn variable is analogue of msg variable of Ether transaction
+      *  tkn.sender is person who initiated this token transaction   (analogue of msg.sender)
+      *  tkn.value the number of tokens that were sent   (analogue of msg.value)
+      *  tkn.data is data of token transaction   (analogue of msg.data)
+      *  tkn.sig is 4 bytes signature of function
+      *  if data of token transaction is a function execution
+      */
+    }
     __isTokenFallback = true;
     if (!address(this).delegatecall(_data)) return false;
 
@@ -49,35 +62,40 @@ contract Standard223Receiver is ERC223Receiver {
 
     return true;
   }
-
+/*
   function getSig(bytes _data) private returns (bytes4 sig) {
     uint l = _data.length < 4 ? _data.length : 4;
     for (uint i = 0; i < l; i++) {
       sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (l - 1 - i))));
     }
   }
-
-  bool __isTokenFallback;
+*/
+  
 
   modifier tokenPayable {
    require(__isTokenFallback);
     _;
   }
 
-  function supportsToken(address token) returns (bool);
-}
+ // function supportsToken(address token)  public (bool);
+
+
+/*
 
 contract ExampleReceiver is Standard223Receiver {
 
 
 
   function foo()  public tokenPayable {
-    LogTokenPayable(1, tkn.addr, tkn.sender, tkn.value);
+    LogTokenPayable(1, Tkn.addr, Tkn.sender, Tkn.value);
   }
 
   function ()  public tokenPayable {
-    LogTokenPayable(0, tkn.addr, tkn.sender, tkn.value);
+    LogTokenPayable(0, Tkn.addr, Tkn.sender, Tkn.value);
   }
 
   event LogTokenPayable(uint i, address token, address sender, uint value);
+
+*/
+  
 }

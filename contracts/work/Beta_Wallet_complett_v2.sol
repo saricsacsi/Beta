@@ -158,6 +158,16 @@ library SafeMath {
     }
 }
 
+library Addresses {
+  function isContract(address _base) internal constant returns (bool) {
+      uint codeSize;
+      assembly {
+          codeSize := extcodesize(_base)
+      }
+      return codeSize > 0;
+  }
+}
+
 /**
  * @title ERC20 interface
  * @dev see https://github.com/ethereum/EIPs/issues/20
@@ -204,15 +214,7 @@ contract ERC223 {
  /**
  * @title Contract that will work with ERC223 tokens.
  */
- 
-contract ERC223ReceivingContract { 
-/**
- * @dev Standard ERC223 function that will handle incoming token transfers.
- *
- * @param _from  Token sender address.
- * @param _value Amount of tokens.
- * @param _data  Transaction metadata.
- */
+contract ERC223ReceivingContract {
     function tokenFallback(address _from, uint _value, bytes _data) public;
 }
 /**
@@ -224,6 +226,7 @@ contract ERC223ReceivingContract {
  */
 contract StandardToken is ERC20, ERC223 {
   using SafeMath for uint256;
+  using Addresses for address;
 
   mapping(address => uint256) balances;
 
@@ -263,64 +266,34 @@ contract StandardToken is ERC20, ERC223 {
   {
     return allowed[_owner][_spender];
   }
-/**
-     * @dev Transfer the specified amount of tokens to the specified address.
-     *      Invokes the `tokenFallback` function if the recipient is a contract.
-     *      The token transfer fails if the recipient is a contract
-     *      but does not implement the `tokenFallback` function
-     *      or the fallback function to receive funds.
-     *
-     * @param _to    Receiver address.
-     * @param _value Amount of tokens that will be transferred.
-     * @param _data  Transaction metadata.
-     */
-    function transfer(address _to, uint _value, bytes _data) public returns (bool) {
-        // Standard function transfer similar to ERC20 transfer with no _data .
-        // Added due to backwards compatibility reasons .
-        uint codeLength;
 
-        assembly {
-            // Retrieve the size of the code on target address, this needs assembly .
-            codeLength := extcodesize(_to)
-        }
 
-        balances[msg.sender] = balances[msg.sender].sub(_value);
-        balances[_to] = balances[_to].add(_value);
-        if(codeLength>0) {
-            ERC223ReceivingContract receiver = ERC223ReceivingContract(_to);
-            receiver.tokenFallback(msg.sender, _value, _data);
-        }
-        emit Transfer(msg.sender, _to, _value, _data);
-        return true;
+    function transfer(address _to, uint _value)
+        public
+        returns (bool) {
+        return transfer(_to, _value, "");
     }
-    
-    /**
-     * @dev Transfer the specified amount of tokens to the specified address.
-     *      This function works the same with the previous one
-     *      but doesn't contain `_data` param.
-     *      Added due to backwards compatibility reasons.
-     *
-     * @param _to    Receiver address.
-     * @param _value Amount of tokens that will be transferred.
-     */
-    function transfer(address _to, uint _value) public returns(bool) {
-        uint codeLength;
-        bytes memory empty;
 
-        assembly {
-            // Retrieve the size of the code on target address, this needs assembly .
-            codeLength := extcodesize(_to)
-        }
+    function transfer(address _to, uint _value, bytes _data)
+        public
+        returns (bool) {
+        if (_value > 0) {
 
-        balances[msg.sender] = balances[msg.sender].sub(_value);
-        balances[_to] = balances[_to].add(_value);
-        if(codeLength>0) {
-            ERC223ReceivingContract receiver = ERC223ReceivingContract(_to);
-            receiver.tokenFallback(msg.sender, _value, empty);
+            if (_to.isContract()) {
+              ERC223ReceivingContract _contract = ERC223ReceivingContract(_to);
+              _contract.tokenFallback(msg.sender, _value, _data);
+            }
+
+            balances[msg.sender] = balances[msg.sender].sub(_value);
+            balances[_to] = balances[_to].add(_value);
+            emit Transfer(msg.sender, _to, _value, _data);
+            return true;
         }
-        emit Transfer(msg.sender, _to, _value, empty);
-        return true;
+        return false;
     }
+
+
+
 
   /**
    * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
@@ -336,32 +309,36 @@ contract StandardToken is ERC20, ERC223 {
     emit Approval(msg.sender, _spender, _value);
     return true;
   }
+    function transferFrom(address _from, address _to, uint _value)
+        public
+        returns (bool) {
+        return transferFrom(_from, _to, _value, "");
+    }
 
-  /**
-   * @dev Transfer tokens from one address to another
-   * @param _from address The address which you want to send tokens from
-   * @param _to address The address which you want to transfer to
-   * @param _value uint256 the amount of tokens to be transferred
-   */
-  function transferFrom(
-    address _from,
-    address _to,
-    uint256 _value
-  )
-    public
-    returns (bool)
-  {
-    require(_value <= balances[_from]);
-    require(_value <= allowed[_from][msg.sender]);
-    require(_to != address(0));
 
-    balances[_from] = balances[_from].sub(_value);
-    balances[_to] = balances[_to].add(_value);
-    allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-    emit Transfer(_from, _to, _value);
-    return true;
-  }
+ function transferFrom(address _from, address _to, uint _value, bytes _data) public returns (bool) {
+        require(_to != address(0));
+        require(_value <= balances[_from]);
+        require(_value <= allowed[_from][msg.sender]);
 
+         if (_to.isContract()) {
+                ERC223ReceivingContract _contract = ERC223ReceivingContract(_to);
+                _contract.tokenFallback(msg.sender, _value, _data);
+              }
+
+        balances[_from] = balances[_from].sub(_value);
+        balances[_to] = balances[_to].add(_value);
+        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
+        emit Transfer(_from, _to, _value);
+        return true;
+    }
+
+
+
+
+
+
+  
   /**
    * @dev Increase the amount of tokens that an owner allowed to a spender.
    * approve should be called when allowed[_spender] == 0. To increment
@@ -562,8 +539,257 @@ contract BetaToken is MintableToken, BurnableToken {
     function transferFrom(address _from, address _to, uint _value) onlyIfCanMove public returns (bool) {
         return super.transferFrom(_from, _to, _value);
     }
+    function transferFrom(address _from, address _to, uint _value, bytes _data) onlyIfCanMove public returns (bool) {
+        return super.transferFrom(_from, _to, _value, _data);
+    }
+
+
+
+
 
     function emergencyERC20Drain( ERC20 oddToken, uint amount ) public {
         oddToken.transfer(owner, amount);
+    }
+}
+
+
+contract Beta_Wallet_for_HoneyGramm {
+
+    address private _owner;
+    address public admin;
+    address public beneficiary;
+    mapping(address => uint32) private _permitting;
+    mapping (uint => mapping (address => bool)) public confirmations;
+
+    BetaToken token;
+
+    //uint32 private MIN_SIGNATURES;
+    uint private _transactionIdx;
+
+    struct Transaction {
+        address from;
+        address to;
+        uint amount;
+        uint32 MIN_SIGNATURES;
+        uint32 signatureCount;
+        mapping (address => uint32) signatures; //nem biztos hogy kell
+    }
+
+    mapping (uint => Transaction) private _transactions;
+    uint[] private _pendingTransactions;
+
+    modifier OnlyOwner() {
+        require(msg.sender == _owner);
+        _;
+    }
+    modifier OnlyAdmin() {
+        require(msg.sender == admin);
+        _;
+    }
+
+    modifier OnlyBeneficiary() {
+        require(msg.sender == beneficiary);
+        _;
+    }
+
+    /// itt tartok, ezt kell átgondolni///
+    modifier OnlyPermitting(uint _transactionId) {
+
+        require((msg.sender == _owner) || (msg.sender == admin) || (confirmations[_transactionId][msg.sender] == true));
+        _;
+    }
+////PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
+    event DepositFunds(address from, uint amount);
+    event TransactionCreated(address from, address to, uint amount, uint transactionId);
+    event DeleteTransaction(uint transactionId);
+    event TransactionCompleted(address from, address to, uint amount, uint transactionId);
+    event TransactionSigned(address by, uint transactionId);
+    event LogTokenPayable(address _from, uint _value, bytes _data);
+    event SignatureCount(uint32 signatureCount, uint transactionId);
+
+
+    constructor(address _betaTokenAddr) 
+        public {
+        _owner = msg.sender;
+        token = BetaToken(_betaTokenAddr);
+    }
+
+    function setAdmin(address _admin)
+        public {
+        admin = _admin;
+    }
+
+    function setBeneficiray(address _beneficiary)
+        public {
+        beneficiary = _beneficiary;
+    }
+
+    function addOwner(address owner) // ne ezerszer adja hozza
+      //  isOwner
+        private {
+        _permitting[owner] = 1;
+    }
+
+    function removeOwner(address owner) // ne ezerszer adja hozza
+       // isOwner
+        private {
+        _permitting[owner] = 0;
+    }
+
+    function ()
+        public
+        payable {
+        emit DepositFunds(msg.sender, msg.value);
+    }
+    
+    function withdraw_ether()
+        public {
+        _owner.transfer(address(this).balance);
+    }
+
+    function withdraw_token(uint _amount)
+        public {
+        token.transfer(_owner, _amount);
+    }
+
+
+// tx tipusa, hany aláirás kell, ha token küldés akkor csak 2, ha más szabály is van akkor 3
+// ezen még lehet alakitani kell
+    function getMinSignatures(uint _typeofTransaction) internal pure returns (uint32) {
+        if (_typeofTransaction == 0)
+            return 2;     
+        if (_typeofTransaction == 1)
+            return 3;         
+        else
+            return 2;
+    }   
+
+ 
+
+// most ezen dolgozom //
+    function transferToToken(address to, uint amount, uint32 typeofTransaction)
+        OnlyOwner
+        public {
+        require(token.balanceOf(address(this)) >= amount);
+        uint transactionId = _transactionIdx++; /// ezzel valamit kezdeni kell
+        
+        //addOwner(to);  
+        //addOwner(admin);
+        
+        
+
+        Transaction memory transaction;
+        transaction.from = msg.sender;
+        transaction.to = to;
+        transaction.amount = amount;
+        transaction.signatureCount = 0; 
+        transaction.MIN_SIGNATURES = getMinSignatures(typeofTransaction);///
+
+        _transactions[transactionId] = transaction;
+        _pendingTransactions.push(transactionId);
+
+        confirmations[transactionId][to] = true;
+       
+        getPendingTransactions();
+        signTransaction(transactionId);
+
+
+        emit TransactionCreated(msg.sender, to, amount, transactionId); 
+        emit SignatureCount(transaction.signatureCount, transactionId);             
+        
+    }
+
+    function getPendingTransactions()
+      view
+      //validOwner
+      public
+      returns (uint[]) {
+        return _pendingTransactions;
+    }
+
+    function signTransaction(uint transactionId)
+      OnlyPermitting(transactionId)
+      public {
+
+        Transaction storage transaction = _transactions[transactionId];
+
+
+      // Transaction must exist
+        require(0x0 != transaction.from);
+
+      // Creator cannot sign the transaction
+      //  require(msg.sender != transaction.from);
+
+      // Cannot sign a transaction more than once
+        //require(transaction.signatures[msg.sender] == 0);
+
+       // transaction.signatures[msg.sender] = 1;
+        transaction.signatureCount++;
+
+        emit TransactionSigned(msg.sender, transactionId);
+        emit SignatureCount(transaction.signatureCount, transactionId);
+//ezt külön kell venni vagy ez mindig tokent küld
+
+
+        if (transaction.signatureCount == transaction.MIN_SIGNATURES) {
+
+            require(token.balanceOf(address(this)) >= transaction.amount);
+
+            token.transfer(transaction.to, transaction.amount); //  ide kell a token.transfer is
+
+            TransactionCompleted(transaction.from, transaction.to, transaction.amount, transactionId);
+          
+            //removeOwner(transaction.to);
+            //removeOwner(admin); // ebben nem vagyok biztos
+            
+
+            deleteTransaction(transactionId);
+      }
+    }
+
+    function deleteTransaction(uint transactionId)
+       OnlyPermitting(transactionId)
+      public {
+        uint32 replace = 0;
+        for(uint i = 0; i < _pendingTransactions.length; i++) {
+            if (1 == replace) {
+                _pendingTransactions[i-1] = _pendingTransactions[i];
+        } else if (transactionId == _pendingTransactions[i]) {
+            replace = 1;
+        }
+        }
+        delete _pendingTransactions[_pendingTransactions.length - 1];
+        _pendingTransactions.length--;
+        delete _transactions[transactionId];
+        
+        emit DeleteTransaction(transactionId);
+    }
+
+    function walletBalance()
+      view
+      public
+      returns (uint) {
+        return address(this).balance;
+    }
+
+    function walletBalanceOfToken()
+      view
+      public
+      returns (uint) {
+        return token.balanceOf(address(this));
+    }
+
+    function is_owner(address who) public view returns (uint32) {
+        return _permitting[who];
+    }
+
+    function tokenFallback(address _from, uint _value, bytes _data)
+      public
+       { 
+        emit LogTokenPayable(_from, _value, _data);
+    }
+    function tesztelAPA(address _who, uint _transactionId) public view returns (bool)
+         { 
+        return ((msg.sender == _owner) || (msg.sender == admin) || (confirmations[_transactionId][msg.sender] == true));
     }
 }

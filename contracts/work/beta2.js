@@ -1,5 +1,6 @@
 
-
+const Web3 = require('web3');
+const web3 = new Web3();
 
 
 // CALL
@@ -43,9 +44,9 @@ walletBalanceOfToken()
 */
 function getPendingTransactions(address, abi, callback) {
     var res
-    var Contract = web3.eth.contract(abi);
+    var BetaWalletContract =  new web3.eth.Contract(abi, address);
         // initiate contract for an address
-    var BetaWalletContract = Contract.at(address);
+    //var WalletContracBetat = Contract.at(address);
             try {
                 BetaWalletContract.getPendingTransactions(function(error, res) {
                     if (!error) {
@@ -53,7 +54,7 @@ function getPendingTransactions(address, abi, callback) {
                     }
                       });
             } catch (err) {
-                callback(error);
+                callback(err);
             }
         }
 

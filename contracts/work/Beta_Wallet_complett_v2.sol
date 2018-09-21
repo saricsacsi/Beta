@@ -557,11 +557,11 @@ contract Beta_Wallet_for_HoneyGramm {
 
     address private _owner;
     address public admin;
-    address public beneficiary;
-    mapping(address => uint32) private _permitting;
-    mapping (uint => mapping (address => bool)) public confirmations;
+    //address public beneficiary;
+    mapping(address => uint32) private _permitting; // nem is kell talán
+    mapping (uint => mapping (address => bool)) public beneficiary;
 
-    BetaToken token;
+    BetaToken  public token;
 
     //uint32 private MIN_SIGNATURES;
     uint private _transactionIdx;
@@ -572,7 +572,9 @@ contract Beta_Wallet_for_HoneyGramm {
         uint amount;
         uint32 MIN_SIGNATURES;
         uint32 signatureCount;
-        mapping (address => uint32) signatures; //nem biztos hogy kell
+        mapping (address => uint32) signatures; //nem biztos hogy kell 
+        // ke lehet venni a structbol a confirmations mintájára vagy 
+        // legyen bool
     }
 
     mapping (uint => Transaction) private _transactions;
@@ -582,58 +584,47 @@ contract Beta_Wallet_for_HoneyGramm {
         require(msg.sender == _owner);
         _;
     }
-    modifier OnlyAdmin() {
-        require(msg.sender == admin);
+    modifier OnlyOwnerOrAdmin() {
+        require((msg.sender == _owner) || (msg.sender == admin));
         _;
     }
 
-    modifier OnlyBeneficiary() {
-        require(msg.sender == beneficiary);
+    modifier OnlyAdmin() {
+        require(msg.sender == admin);
         _;
     }
 
     /// itt tartok, ezt kell átgondolni///
     modifier OnlyPermitting(uint _transactionId) {
 
-        require((msg.sender == _owner) || (msg.sender == admin) || (confirmations[_transactionId][msg.sender] == true));
+        require((msg.sender == _owner) || (msg.sender == admin) || (beneficiary[_transactionId][msg.sender] == true));
         _;
     }
-////PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
-    event DepositFunds(address from, uint amount);
-    event TransactionCreated(address from, address to, uint amount, uint transactionId);
-    event DeleteTransaction(uint transactionId);
-    event TransactionCompleted(address from, address to, uint amount, uint transactionId);
-    event TransactionSigned(address by, uint transactionId);
+/*
+meg kellnézni mit kell indexelni majd !!!!!!
+*****************************************************************************
+*/
+    event DepositFunds(address indexed from, uint indexed amount);
+    event TransactionCreated(address indexed from, address indexed to, uint indexed amount, uint transactionId);
+    event DeletePendingTransaction(uint transactionId);
+    event TransactionCompleted(address indexed from, address indexed to, uint indexed amount, uint transactionId);
+    event TransactionSigned(address indexed by, uint indexed transactionId);
     event LogTokenPayable(address _from, uint _value, bytes _data);
     event SignatureCount(uint32 signatureCount, uint transactionId);
 
 
-    constructor(address _betaTokenAddr) 
+    constructor(address _betaTokenAddr, address _admin) 
         public {
+        admin = _admin;
         _owner = msg.sender;
         token = BetaToken(_betaTokenAddr);
     }
 
-    function setAdmin(address _admin)
+    function setNewAdmin(address _newAdmin)
+        OnlyAdmin
         public {
-        admin = _admin;
-    }
-
-    function setBeneficiray(address _beneficiary)
-        public {
-        beneficiary = _beneficiary;
-    }
-
-    function addOwner(address owner) // ne ezerszer adja hozza
-      //  isOwner
-        private {
-        _permitting[owner] = 1;
-    }
-
-    function removeOwner(address owner) // ne ezerszer adja hozza
-       // isOwner
-        private {
-        _permitting[owner] = 0;
+        require(_newAdmin != 0x0);
+        admin = _newAdmin;
     }
 
     function ()
@@ -643,18 +634,19 @@ contract Beta_Wallet_for_HoneyGramm {
     }
     
     function withdraw_ether()
+        OnlyOwner
         public {
         _owner.transfer(address(this).balance);
     }
 
     function withdraw_token(uint _amount)
+        OnlyOwner
         public {
         token.transfer(_owner, _amount);
     }
 
 
-// tx tipusa, hany aláirás kell, ha token küldés akkor csak 2, ha más szabály is van akkor 3
-// ezen még lehet alakitani kell
+
     function getMinSignatures(uint _typeofTransaction) internal pure returns (uint32) {
         if (_typeofTransaction == 0)
             return 2;     
@@ -668,14 +660,10 @@ contract Beta_Wallet_for_HoneyGramm {
 
 // most ezen dolgozom //
     function transferToToken(address to, uint amount, uint32 typeofTransaction)
-        OnlyOwner
+        OnlyOwnerOrAdmin
         public {
         require(token.balanceOf(address(this)) >= amount);
-        uint transactionId = _transactionIdx++; /// ezzel valamit kezdeni kell
-        
-        //addOwner(to);  
-        //addOwner(admin);
-        
+        uint transactionId = _transactionIdx++;    
         
 
         Transaction memory transaction;
@@ -688,7 +676,7 @@ contract Beta_Wallet_for_HoneyGramm {
         _transactions[transactionId] = transaction;
         _pendingTransactions.push(transactionId);
 
-        confirmations[transactionId][to] = true;
+        beneficiary[transactionId][to] = true;
        
         getPendingTransactions();
         signTransaction(transactionId);
@@ -720,35 +708,26 @@ contract Beta_Wallet_for_HoneyGramm {
       // Creator cannot sign the transaction
       //  require(msg.sender != transaction.from);
 
-      // Cannot sign a transaction more than once
-        //require(transaction.signatures[msg.sender] == 0);
+     //Cannot sign a transaction more than once
+        require(transaction.signatures[msg.sender] == 0);
+        transaction.signatures[msg.sender] = 1;
 
-       // transaction.signatures[msg.sender] = 1;
         transaction.signatureCount++;
 
         emit TransactionSigned(msg.sender, transactionId);
         emit SignatureCount(transaction.signatureCount, transactionId);
-//ezt külön kell venni vagy ez mindig tokent küld
-
 
         if (transaction.signatureCount == transaction.MIN_SIGNATURES) {
-
             require(token.balanceOf(address(this)) >= transaction.amount);
-
-            token.transfer(transaction.to, transaction.amount); //  ide kell a token.transfer is
-
-            TransactionCompleted(transaction.from, transaction.to, transaction.amount, transactionId);
-          
-            //removeOwner(transaction.to);
-            //removeOwner(admin); // ebben nem vagyok biztos
-            
-
-            deleteTransaction(transactionId);
+            token.transfer(transaction.to, transaction.amount);
+            emit TransactionCompleted(transaction.from, transaction.to, transaction.amount, transactionId);
+                             
+            deletePendingTransaction(transactionId);
       }
     }
 
-    function deleteTransaction(uint transactionId)
-       OnlyPermitting(transactionId)
+    function deletePendingTransaction(uint transactionId)
+       OnlyPermitting(transactionId) // meg kell nézni ki tudja hivni
       public {
         uint32 replace = 0;
         for(uint i = 0; i < _pendingTransactions.length; i++) {
@@ -762,7 +741,7 @@ contract Beta_Wallet_for_HoneyGramm {
         _pendingTransactions.length--;
         delete _transactions[transactionId];
         
-        emit DeleteTransaction(transactionId);
+        emit DeletePendingTransaction(transactionId);
     }
 
     function walletBalance()
@@ -778,18 +757,15 @@ contract Beta_Wallet_for_HoneyGramm {
       returns (uint) {
         return token.balanceOf(address(this));
     }
-
-    function is_owner(address who) public view returns (uint32) {
-        return _permitting[who];
-    }
-
+ 
     function tokenFallback(address _from, uint _value, bytes _data)
       public
        { 
         emit LogTokenPayable(_from, _value, _data);
     }
-    function tesztelAPA(address _who, uint _transactionId) public view returns (bool)
+
+    function check_permitting(address _who, uint _transactionId) public view returns (bool)
          { 
-        return ((msg.sender == _owner) || (msg.sender == admin) || (confirmations[_transactionId][msg.sender] == true));
+        return ((_who == _owner) || (_who == admin) || (beneficiary[_transactionId][_who] == true));
     }
 }

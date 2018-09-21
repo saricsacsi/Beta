@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Viki porba App</title>
+    <script type="text/javascript" src="./web3.min.js"></script>
+    <script type="text/javascript" src="./abi_BW_v2.js"></script>
+    
+    
+ </head>
+   <body>
+      <h1> BetaWalletTEST</h1>
+      <h1>get admin : </h1>
+     <p>Ird ide az Ethereum Address-t:</p>
+    <input type="text" size="50" id="address" />
+    <button type="button" onClick="getAdminrOfWallet();">admin</button>
+    <br />
+    <h1>balance of token: </h1>
+    <p>Ird ide az  Address-t:</p>
+    <input type="text" size="50" id="address" />
+    <button type="button" onClick="BalanceOfToken();"> Küldés</button>
+
+
+    <h1>Küldés: BetaTOKEN küldés feltétel nélkül : </h1>
+
+    <p>Ird ide az  Address-t, honnan?:</p>
+    <input type="text" size="50" id="address" />
+   
+    <p>Ird ide az  Address-t, kinek?:</p>
+    <input type="text" size="50" id="beneficiary" />
+    <p>Ird ide az  Amountot-t:</p>
+   <input type="text" size="50" id="amount" />
+   <button type="button" onClick="transferToToken();">Start token Küldés</button>
+  
+   <br /> 
+  
+   <div id="output"></div>
+    <div id="address"></div>
+    <div id="admin"></div>
+    <div id="balanceOfToken"></div>
+    <div id="beneficiary"></div>
+    <div id="amount"></div>
+   <br /> 
+
+
+   <script>
+    window.addEventListener('load', function () {
+        if (typeof web3 !== 'undefined') {
+            document.getElementById("output").innerHTML = "ok";
+            window.web3 = new Web3(web3.currentProvider);
+        } else {
+            document.getElementById("output").innerHTML = "no";
+            window.web3 = new Web3(new Web3.providers.HttpProvider("https://kovan.infura.io/NZj0uaZfw9wcy72qxjtS"));
+        }
+    })
+      
+   function getAdminrOfWallet() {
+    var address,res
+    var Contract = web3.eth.contract(abi);
+    address = document.getElementById("address").value
+        // initiate contract for an address
+    var BetaWalletContract = Contract.at(address);
+          
+        BetaWalletContract.admin(function(error, res) {
+            document.getElementById('admin').innerText = "admin:  " + res;
+          });
+          
+        }
+
+   function BalanceOfToken() {
+    var res,balance,address
+    var Contract = web3.eth.contract(abi);
+    address = document.getElementById("address").value
+        // initiate contract for an address
+    var BetaWalletContract = Contract.at(address);
+           try {
+                BetaWalletContract.walletBalanceOfToken(function(error, res) {
+                   if (!error) {                    
+                   //balance = web3.fromWei(res, 'ether');
+                   document.getElementById('balanceOfToken').innerText = "balance of token:  " + res;
+                    }
+                });
+            } catch (err) {
+                document.getElementById("output").innerHTML = err;  
+            }
+        }
+
+  function transferToToken() {
+    var res,address, beneficiary,amount,type
+    var Contract = web3.eth.contract(abi);
+    address = document.getElementById("address").value
+        // initiate contract for an address
+    var BetaWalletContract = Contract.at(address);
+    beneficiary = document.getElementById("beneficiary").value
+    amount = document.getElementById("amount").value
+    type = 0
+           try {
+                BetaWalletContract.transferToToken(beneficiary, amount, type,function(error, res) {
+                   if (!error) {                    
+                    document.getElementById('output').innerText = "transfer start";
+                    }
+                });
+            } catch (err) {
+                document.getElementById("output").innerHTML = err;  
+            }
+        }
+
+
+    </script>
+
+
+   
+</body>
+</html>

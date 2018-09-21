@@ -41,15 +41,20 @@ getPendingTransactions()
 walletBalance()
 walletBalanceOfToken()
 */
-function getPendingTransactions(address, abi) {
+function getPendingTransactions(address, abi, callback) {
     var res
     var Contract = web3.eth.contract(abi);
         // initiate contract for an address
     var BetaWalletContract = Contract.at(address);
             try {
                 BetaWalletContract.getPendingTransactions(function(error, res) {
+                    if (!error) {
+                        callback(res);   
+                    }
                       });
-            } catch (err) {}
+            } catch (err) {
+                callback(error);
+            }
         }
 
 
@@ -119,3 +124,8 @@ function transferToToken(address, abi, beneficiary, amount, type) {
         
     }
 }
+
+module.exports = {
+    getPendingTransactions,
+    transferToToken
+  }

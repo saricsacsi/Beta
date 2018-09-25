@@ -553,9 +553,9 @@ contract BetaToken is MintableToken, BurnableToken {
 }
 
 
-contract Beta_Wallet_for_HoneyGramm {
+contract Beta_Wallet_for_HoneyGramm  is Ownable {
 
-    address private _owner;
+    
     address public admin;
     //address public beneficiary;
     mapping(address => uint32) private _permitting; // nem is kell talán
@@ -580,24 +580,21 @@ contract Beta_Wallet_for_HoneyGramm {
     mapping (uint => Transaction) private _transactions;
     uint[] private _pendingTransactions;
 
-    modifier OnlyOwner() {
-        require(msg.sender == _owner);
-        _;
-    }
-    modifier OnlyOwnerOrAdmin() {
-        require((msg.sender == _owner) || (msg.sender == admin));
+    
+    modifier onlyOwnerOrAdmin() {
+        require((msg.sender == owner) || (msg.sender == admin));
         _;
     }
 
-    modifier OnlyAdmin() {
+    modifier onlyAdmin() {
         require(msg.sender == admin);
         _;
     }
 
     /// itt tartok, ezt kell átgondolni///
-    modifier OnlyPermitting(uint _transactionId) {
+    modifier onlyPermitting(uint _transactionId) {
 
-        require((msg.sender == _owner) || (msg.sender == admin) || (beneficiary[_transactionId][msg.sender] == true));
+        require((msg.sender == owner) || (msg.sender == admin) || (beneficiary[_transactionId][msg.sender] == true));
         _;
     }
 /*
@@ -616,12 +613,11 @@ meg kellnézni mit kell indexelni majd !!!!!!
     constructor(address _betaTokenAddr, address _admin) 
         public {
         admin = _admin;
-        _owner = msg.sender;
         token = BetaToken(_betaTokenAddr);
     }
 
     function setNewAdmin(address _newAdmin)
-        OnlyAdmin
+        onlyAdmin
         public {
         require(_newAdmin != 0x0);
         admin = _newAdmin;
@@ -634,15 +630,15 @@ meg kellnézni mit kell indexelni majd !!!!!!
     }
     
     function withdraw_ether()
-        OnlyOwner
+        onlyOwner
         public {
-        _owner.transfer(address(this).balance);
+        owner.transfer(address(this).balance);
     }
 
-    function withdraw_token(uint _amount)
-        OnlyOwner
+    function withdraw_token(uint amount)
+        onlyOwner
         public {
-        token.transfer(_owner, _amount);
+        token.transfer(owner, amount);
     }
 
 
@@ -660,7 +656,7 @@ meg kellnézni mit kell indexelni majd !!!!!!
 
 // most ezen dolgozom //
     function transferToToken(address to, uint amount, uint32 typeofTransaction)
-        OnlyOwnerOrAdmin
+        onlyOwnerOrAdmin
         public {
         require(token.balanceOf(address(this)) >= amount);
         uint transactionId = _transactionIdx++;    
@@ -689,14 +685,13 @@ meg kellnézni mit kell indexelni majd !!!!!!
 
     function getPendingTransactions()
       view
-      //validOwner
       public
       returns (uint[]) {
         return _pendingTransactions;
     }
 
     function signTransaction(uint transactionId)
-      OnlyPermitting(transactionId)
+      onlyPermitting(transactionId)
       public {
 
         Transaction storage transaction = _transactions[transactionId];
@@ -727,21 +722,21 @@ meg kellnézni mit kell indexelni majd !!!!!!
     }
 
     function deletePendingTransaction(uint transactionId)
-       OnlyPermitting(transactionId) // meg kell nézni ki tudja hivni
-      public {
-        uint32 replace = 0;
-        for(uint i = 0; i < _pendingTransactions.length; i++) {
-            if (1 == replace) {
-                _pendingTransactions[i-1] = _pendingTransactions[i];
-        } else if (transactionId == _pendingTransactions[i]) {
-            replace = 1;
-        }
-        }
-        delete _pendingTransactions[_pendingTransactions.length - 1];
-        _pendingTransactions.length--;
-        delete _transactions[transactionId];
-        
-        emit DeletePendingTransaction(transactionId);
+        onlyPermitting(transactionId) // meg kell nézni ki tudja hivni
+        public {
+            uint32 replace = 0;
+            for(uint i = 0; i < _pendingTransactions.length; i++) {
+                if (1 == replace) {
+                    _pendingTransactions[i-1] = _pendingTransactions[i];
+            } else if (transactionId == _pendingTransactions[i]) {
+                replace = 1;
+            }
+            }
+            delete _pendingTransactions[_pendingTransactions.length - 1];
+            _pendingTransactions.length--;
+            delete _transactions[transactionId];
+            
+            emit DeletePendingTransaction(transactionId);
     }
 
     function walletBalance()
@@ -766,6 +761,6 @@ meg kellnézni mit kell indexelni majd !!!!!!
 
     function check_permitting(address _who, uint _transactionId) public view returns (bool)
          { 
-        return ((_who == _owner) || (_who == admin) || (beneficiary[_transactionId][_who] == true));
+        return ((_who == owner) || (_who == admin) || (beneficiary[_transactionId][_who] == true));
     }
 }

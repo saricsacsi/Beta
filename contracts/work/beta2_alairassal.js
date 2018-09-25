@@ -187,7 +187,7 @@ deleteTransaction(uint transactionId)
 function transferToToken(web3, address, abi, beneficiary, amount, type,  callback) {
     var res
        
-    const BetaWalletContract =  new web3.eth.Contract(abi, address, {from: web3.eth.defaultAccount});
+    const BetaWalletContract =  new web3.eth.Contract(abi, address, {from: web3.eth.defaultAccount});    
 
             try {
                 BetaWalletContract.methods.transferToToken(beneficiary, amount, type).send((res,error) => {
@@ -203,7 +203,7 @@ function transferToToken(web3, address, abi, beneficiary, amount, type,  callbac
             }
         }
 
-
+      
         
 function signTransaction(web3, address, abi,transactionId, callback) {
     var res

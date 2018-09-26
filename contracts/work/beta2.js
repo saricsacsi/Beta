@@ -184,84 +184,145 @@ deleteTransaction(uint transactionId)
 
  
 
-function transferToToken(web3, address, abi, beneficiary, amount, type,  callback) {
+function transferToToken(web3, calleraddress, privateKey, address, abi, beneficiary, amount, type,  callback) {
     var res
        
-    const BetaWalletContract =  new web3.eth.Contract(abi, address, {from: web3.eth.defaultAccount});
+    const BetaWalletContract =  new web3.eth.Contract(abi, address);
 
             try {
-                BetaWalletContract.methods.transferToToken(beneficiary, amount, type).send((res,error) => {
-                    if (!error) {
-                        callback(res, 0);   
-                    }
+                web3.eth.getTransactionCount(calleraddress).then( (nonce) => {
+                    let encodedABI = BetaWalletContract.methods.transferToToken(beneficiary, amount, type).encodeABI();
+             BetaWalletContract.methods.transferToToken(beneficiary, amount, type).estimateGas({ 
+                from: calleraddress }, (error, gasEstimate) => {
+                  let tx = {
+                    to: address,
+                    gas: gasEstimate,
+                    data: encodedABI,
+                    nonce: nonce
+                  };
+                  web3.eth.accounts.signTransaction(tx, privateKey, (error, res) => {
+                    if (res == null) {callback(error, null); 
+                    } 
                     else {
-                        callback(null, error);
-                        }
-                    });
+                      let tran = web3.eth.sendSignedTransaction(res.rawTransaction);
+                      tran.on('transactionHash', (txhash) =>
+                       {
+                        callback(0, txhash); 
+                        });
+                     }
+                   })
+                 })
+              })
+
             } catch (err) {
-                callback(0, err);
+                callback(err, 0);
             }
         }
 
 
         
-function signTransaction(web3, address, abi,transactionId, callback) {
+function signTransaction(web3, sign_address, sign_privateKey, address, abi, transactionId, callback) {
     var res
                        
     const BetaWalletContract =  new web3.eth.Contract(abi, address);
-            try {
-                BetaWalletContract.methods.signTransaction(transactionId).send((res,error) => {
-                    if (!error) {
-                         callback(res, 0);   
-                    }
+           try {
+                web3.eth.getTransactionCount(sign_address).then( (nonce) => {
+                    let encodedABI = BetaWalletContract.methods.signTransaction(transactionId).encodeABI();
+             BetaWalletContract.methods.signTransaction(transactionId).estimateGas({ 
+                from: sign_address }, (error, gasEstimate) => {
+                  let tx = {
+                    to: address,
+                    gas: gasEstimate + 100000,
+                    data: encodedABI,
+                    nonce: nonce
+                  };
+                  web3.eth.accounts.signTransaction(tx, sign_privateKey, (error, res) => {
+                    if (res == null) {callback(error, null); 
+                    } 
                     else {
-                        callback(null, error);
-                        }
-                     });
-             } catch (err) {
-                callback(0, err);
+                      let tran = web3.eth.sendSignedTransaction(res.rawTransaction);
+                      tran.on('transactionHash', (txhash) =>
+                       {
+                        callback(0, txhash); 
+                        });
+                     }
+                   })
+                 })
+              })
+
+            } catch (err) {
+                callback(err, 0);
             }
         }  
-                
 
         
-function deletePendingTransaction(web3, address, abi,transactionId, callback) {
+function deletePendingTransaction(web3, sign_address, sign_privateKey, address, abi, del_transactionId, callback) {
     var res
                                        
     const BetaWalletContract =  new web3.eth.Contract(abi, address);
-                try {
-                    BetaWalletContract.methods.deletePendingTransaction(transactionId).send((res,error) => {
-                     if (!error) {
-                            callback(res, 0);   
-                     }
-                        else {
-                            callback(null, error);
-                            }
-                     });
-            } catch (err) {
-                callback(0, err);
-               }
-         }       
-        
+    try {
+        web3.eth.getTransactionCount(sign_address).then( (nonce) => {
+            let encodedABI = BetaWalletContract.methods.deletePendingTransaction(del_transactionId).encodeABI();
+     BetaWalletContract.methods.deletePendingTransaction(del_transactionId).estimateGas({ 
+        from: sign_address }, (error, gasEstimate) => {
+          let tx = {
+            to: address,
+            gas: gasEstimate + 200000,
+            data: encodedABI,
+            nonce: nonce
+          };
+          web3.eth.accounts.signTransaction(tx, sign_privateKey, (error, res) => {
+            if (res == null) {callback(error, null); 
+            } 
+            else {
+              let tran = web3.eth.sendSignedTransaction(res.rawTransaction);
+              tran.on('transactionHash', (txhash) =>
+               {
+                callback(0, txhash); 
+                });
+             }
+           })
+         })
+      })
+
+    } catch (err) {
+        callback(err, 0);
+    }
+}  
          
-function setNewAdmin(web3, address, abi, newAdmin, callback) {
+function setNewAdmin(web3,sign_address, sign_privateKey, address, abi, newAdmin, callback) {
     var res
                                        
     const BetaWalletContract =  new web3.eth.Contract(abi, address);
-                try {
-                    BetaWalletContract.methods.setNewAdmin(newAdmin).send((res,error) => {
-                     if (!error) {
-                            callback(res, 0);   
-                     }
-                        else {
-                            callback(null, error);
-                            }
-                     });
-            } catch (err) {
-                callback(0, err);
-               }
-         }       
-    
+    try {
+        web3.eth.getTransactionCount(sign_address).then( (nonce) => {
+            let encodedABI = BetaWalletContract.methods.setNewAdmin(newAdmin).encodeABI();
+     BetaWalletContract.methods.setNewAdmin(newAdmin).estimateGas({ 
+        from: sign_address }, (error, gasEstimate) => {
+          let tx = {
+            to: address,
+            gas: gasEstimate + 200000,
+            data: encodedABI,
+            nonce: nonce
+          };
+          web3.eth.accounts.signTransaction(tx, sign_privateKey, (error, res) => {
+            if (res == null) {callback(error, null); 
+            } 
+            else {
+              let tran = web3.eth.sendSignedTransaction(res.rawTransaction);
+              tran.on('transactionHash', (txhash) =>
+               {
+                callback(0, txhash); 
+                });
+             }
+           })
+         })
+      })
+
+    } catch (err) {
+        callback(err, 0);
+    }
+}  
          
 function withdraw_ether(web3, address, abi, callback) {
     var res

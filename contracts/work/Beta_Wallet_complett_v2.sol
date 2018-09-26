@@ -675,7 +675,7 @@ meg kellnézni mit kell indexelni majd !!!!!!
         beneficiary[transactionId][to] = true;
        
         getPendingTransactions();
-        signTransaction(transactionId);
+        sign_TransferToToken(transactionId);
 
 
         emit TransactionCreated(msg.sender, to, amount, transactionId); 
@@ -690,7 +690,7 @@ meg kellnézni mit kell indexelni majd !!!!!!
         return _pendingTransactions;
     }
 
-    function signTransaction(uint transactionId)
+    function sign_TransferToToken(uint transactionId)
       onlyPermitting(transactionId)
       public {
 

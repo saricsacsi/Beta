@@ -98,7 +98,7 @@ transferToToken(web3, calleraddress, privateKey, address, abi, beneficiary, amou
 })
 
 
-signTransaction(web3, sign_address, sign_privateKey, address, abi, transactionId, function(error , result)  {
+sign_TransferToToken(web3, sign_address, sign_privateKey, address, abi, transactionId, function(error , result)  {
     if (error) {
       console.log("Error!");
     } else {

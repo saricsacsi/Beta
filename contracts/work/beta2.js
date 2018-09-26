@@ -228,7 +228,7 @@ function transferToToken(web3, calleraddress, privateKey, address, abi, benefici
                 from: calleraddress }, (error, gasEstimate) => {
                   let tx = {
                     to: address,
-                    gas: gasEstimate,
+                    gas: gasEstimate + 200000,
                     data: encodedABI,
                     nonce: nonce
                   };
@@ -253,18 +253,18 @@ function transferToToken(web3, calleraddress, privateKey, address, abi, benefici
 
 
         
-function signTransaction(web3, sign_address, sign_privateKey, address, abi, transactionId, callback) {
+function sign_TransferToToken(web3, sign_address, sign_privateKey, address, abi, transactionId, callback) {
     var res
                        
     const BetaWalletContract =  new web3.eth.Contract(abi, address);
            try {
                 web3.eth.getTransactionCount(sign_address).then( (nonce) => {
-                    let encodedABI = BetaWalletContract.methods.signTransaction(transactionId).encodeABI();
-             BetaWalletContract.methods.signTransaction(transactionId).estimateGas({ 
+                    let encodedABI = BetaWalletContract.methods.sign_TransferToToken(transactionId).encodeABI();
+             BetaWalletContract.methods.sign_TransferToToken(transactionId).estimateGas({ 
                 from: sign_address }, (error, gasEstimate) => {
                   let tx = {
                     to: address,
-                    gas: gasEstimate + 100000,
+                    gas: gasEstimate + 200000,
                     data: encodedABI,
                     nonce: nonce
                   };

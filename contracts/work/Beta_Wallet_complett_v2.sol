@@ -763,4 +763,6 @@ meg kellnézni mit kell indexelni majd !!!!!!
          { 
         return ((_who == owner) || (_who == admin) || (beneficiary[_transactionId][_who] == true));
     }
+
+   
 }

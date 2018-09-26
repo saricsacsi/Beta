@@ -39,17 +39,17 @@ console.log(web3.eth.defaultAccount);
 var version = web3.version;
 console.log(version);
 
-/*
 
-getOwnerOfWallet(web3, address, abi, function(error , result) {
+
+getOwnerOfWallet(web3, address, abi, function(result , error) {
     if (error) {
         console.log(error);
       } else {
         console.log("owner: "+ result);
       }
 })
-
-getAdminrOfWallet(web3, address, abi, function(error , result) {
+/*
+getAdminrOfWallet(web3, address, abi,function(result , error) {
     if (error) {
         console.log(error);
       } else {
@@ -57,7 +57,7 @@ getAdminrOfWallet(web3, address, abi, function(error , result) {
       }
 })
 
-getPendingTransactions(web3, address, abi, function(error , result) {
+getPendingTransactions(web3, address, abi, function(result , error) {
     if (error) {
         console.log(error);
       } else {
@@ -65,7 +65,7 @@ getPendingTransactions(web3, address, abi, function(error , result) {
       }
 })
 
-walletBalance(web3, address, abi, function(error , result) {
+walletBalance(web3, address, abi, function(result , error)  {
     if (error) {
         console.log(error);
       } else {
@@ -73,7 +73,7 @@ walletBalance(web3, address, abi, function(error , result) {
       }
 })
 
-BalanceOfToken(web3, address, abi, function(error , result) {
+BalanceOfToken(web3, address, abi, function(result , error) {
     if (error) {
         console.log(error);
       } else {
@@ -81,7 +81,7 @@ BalanceOfToken(web3, address, abi, function(error , result) {
       }
 })
 
-check_permitting(web3, address, abi, who, transactionId, function(error , result) {
+check_permitting(web3, address, abi, who, transactionId, function(result , error) {
     if (error) {
         console.log(error);
       } else {
@@ -132,11 +132,11 @@ withdraw_ether(web3,  calleraddress, privateKey, address, abi, function(error , 
       }
 })
 /*
-*/
+
 withdraw_token(web3, calleraddress, privateKey, address, abi, token_amount, function(error , result) {
     if (error) {
         console.log(error);
       } else {
         console.log("withdraw token: "+  token_amount+ "result: " +result)
       }
-}) 
+}) */

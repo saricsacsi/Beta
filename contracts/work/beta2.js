@@ -1,23 +1,33 @@
-
+/**
+ * IMPLEMENTATION in javascript 
+ * You have to declare these variables globally for the funtions
+* const address = 'address of the contract that we are using in string';
+* const abi = require('abi of the contract that we are using in a json file');
+* const Web3 = require('web3');
+* const web3 = new Web3(); <--(here you can set the provider)
+*/
 const Web3 = require('web3');
 
 /**
- * Calls a contract function.
+ * Calls a contract function to get the owner of the wallet.
  *
- * @method call
- * @param {...Object} Contract function arguments
+ * @method owner().call get the address of the owner
+ * @param web3 creating a web3 connection for the function whenever it is called
+ * @param address address of the contract that we are using
+ * @param abi abi of the contract that we are using
  * @param {function} If the last argument is a function, the contract function
  *   call will be asynchronous, and the callback will be passed the
  *   error and result.
  * @return {String} the address of the owner
  */
+
 function getOwnerOfWallet(web3, address, abi, callback) {
     var res
     const BetaWalletContract =  new web3.eth.Contract(abi, address);
           
        
     try {
-        BetaWalletContract.methods.owner().call((res, error) => {
+        BetaWalletContract.methods.owner().call((error, res) => {
             if (!error) {
                 callback(res, 0);   
             }
@@ -29,21 +39,25 @@ function getOwnerOfWallet(web3, address, abi, callback) {
         callback(0, err);
     }
 }
-/*
-    @dev getting function for the admin of the Wallet
-    @param web3 creating a web3 connection for the function whenever it is called
-    @param address address of the contract that we are using
-    @param abi abi of the contract that we are using
-    @callback result the address of the admin in string
-
-*/
+/**
+ * Calls a contract function to get the admin of the wallet.
+ *
+ * @method admin().call get the address of the admin
+ * @param web3 creating a web3 connection for the function whenever it is called
+ * @param address address of the contract that we are using
+ * @param abi abi of the contract that we are using
+ * @param {function} If the last argument is a function, the contract function
+ *   call will be asynchronous, and the callback will be passed the
+ *   error and result.
+ * @return {String} the address of the admin
+ */
 function getAdminrOfWallet(web3, address, abi, callback) {
     var res
     const BetaWalletContract =  new web3.eth.Contract(abi, address);
           
        
     try {
-       BetaWalletContract.methods.admin().call((res, error) =>  {
+       BetaWalletContract.methods.admin().call((error, res) =>  {
             if (!error) {
                 callback(res, 0);   
             }
@@ -59,12 +73,17 @@ function getAdminrOfWallet(web3, address, abi, callback) {
 
 
 
-/*
-    @dev getter functions to get PendingTransactions
-    @param web3 creating a web3 connection for the function whenever it is called
-    @param address address of the contract that we are using
-    @param abi abi of the contract that we are using
-    @callback provide an array with the transaction id-s
+/**
+ * Calls a contract function to get the ID-s of the pending transactions.
+ *
+ * @method getPendingTransactions().call get the ID-s of the pending transactions
+ * @param web3 creating a web3 connection for the function whenever it is called
+ * @param address address of the contract that we are using
+ * @param abi abi of the contract that we are using
+ * @param {function} If the last argument is a function, the contract function
+ *   call will be asynchronous, and the callback will be passed the
+ *   error and result.
+ * @return {Array} the ID-s of the pending transactions
  */
 
 function getPendingTransactions(web3, address, abi, callback) {
@@ -73,7 +92,7 @@ function getPendingTransactions(web3, address, abi, callback) {
         // initiate contract for an address
     
             try {
-                BetaWalletContract.methods.getPendingTransactions().call((res,error) => {
+                BetaWalletContract.methods.getPendingTransactions().call((error, res) => {
                     if (!error) {
                         callback(res, 0);   
                     }
@@ -86,12 +105,17 @@ function getPendingTransactions(web3, address, abi, callback) {
             }
         }
 
-/*
-    @dev getter functions to get the balance of the ether that the wallet has got
-    @param web3 creating a web3 connection for the function whenever it is called
-    @param address address of the contract that we are using
-    @param abi abi of the contract that we are using
-    @callback provide an integer of the balance in ether
+/**
+ * Calls a contract function to get the balance of ethers in the wallet.
+ *
+ * @method walletBalance().call get the ether balance of the wallet
+ * @param web3 creating a web3 connection for the function whenever it is called
+ * @param address address of the contract that we are using
+ * @param abi abi of the contract that we are using
+ * @param {function} If the last argument is a function, the contract function
+ *   call will be asynchronous, and the callback will be passed the
+ *   error and result.
+ * @return {Number} the balance of ethers in the wallet
  */
 
 function walletBalance(web3, address, abi, callback) {
@@ -99,7 +123,7 @@ function walletBalance(web3, address, abi, callback) {
     const BetaWalletContract =  new web3.eth.Contract(abi, address);
 
             try {
-                BetaWalletContract.methods.walletBalance().call((res,error) => {
+                BetaWalletContract.methods.walletBalance().call((error, res) => {
                     if (!error) {
                         var balance = web3.fromWei(res, 'ether');
                         callback(balance, 0);   
@@ -113,20 +137,24 @@ function walletBalance(web3, address, abi, callback) {
             }
         }
 
-/*
-    @dev getter functions to get the ballance of the tokens that the wallet holds
-    @param web3 creating a web3 connection for the function whenever it is called
-    @param address address of the contract that we are using
-    @param abi abi of the contract that we are using
-    @callback provide an integer of the balance
+/**
+ * Calls a contract function to get the balance of tokens in the wallet.
+ *
+ * @method walletBalance().call get the balance of tokens in the wallet
+ * @param web3 creating a web3 connection for the function whenever it is called
+ * @param address address of the contract that we are using
+ * @param abi abi of the contract that we are using
+ * @param {function} If the last argument is a function, the contract function
+ *   call will be asynchronous, and the callback will be passed the
+ *   error and result.
+ * @return {Number} the balance of tokens in the wallet
  */
-
 function BalanceOfToken(web3, address, abi, callback) {
     var res,balance
     const BetaWalletContract =  new web3.eth.Contract(abi, address);
 
             try {
-                BetaWalletContract.methods.walletBalanceOfToken().call((res,error) => {
+                BetaWalletContract.methods.walletBalanceOfToken().call((error, res) => {
                     if (!error) {
                         var balance = web3.fromWei(res, 'ether');
                         callback(balance, 0);   
@@ -139,17 +167,20 @@ function BalanceOfToken(web3, address, abi, callback) {
                 callback(0, err);
             }
         }
-/*
-    @dev getter functions to check if the address is permitted to sign the transaction with teh given id
-    @param _who the address that we want to check
-    @param _transactionId the transaction that we want to check by the id
-    @param web3 creating a web3 connection for the function whenever it is called
-    @param address address of the contract that we are using
-    @param abi abi of the contract that we are using
-    @callback provide an integer of the balance
- 
-check_permitting(address _who, uint _transactionId)
-*/
+/**
+ * Calls a contract function to get the admin of the wallet.
+ *
+ * @method check_permitting(who,transactionId).call check if the given address has got authorisation to sign the transaction given by the transactionId
+ *      @param who the address that we are checking
+ *      @param transactionId the Id of the transaction that we are checking
+ * @param web3 creating a web3 connection for the function whenever it is called
+ * @param address address of the contract that we are using
+ * @param abi abi of the contract that we are using
+ * @param {function} If the last argument is a function, the contract function
+ *   call will be asynchronous, and the callback will be passed the
+ *   error and result.
+ * @return {boolean} true if the address can sign the transaction
+ */
         
 function check_permitting(web3, address, abi, who, transactionId, callback) {
     var res
@@ -157,7 +188,7 @@ function check_permitting(web3, address, abi, who, transactionId, callback) {
           // initiate contract for an address
     
             try {
-                 BetaWalletContract.methods.check_permitting(who, transactionId).call((res,error) => {
+                 BetaWalletContract.methods.check_permitting(who, transactionId).call((error, res) => {
                      if (!error) {
                          callback(res, 0);   
                       }
@@ -169,6 +200,7 @@ function check_permitting(web3, address, abi, who, transactionId, callback) {
                 callback(0, err);
             }
           }
+  
         
 /*
 call the functions what are changing the state on the network:
